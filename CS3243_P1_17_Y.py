@@ -1,5 +1,6 @@
 import os
 import sys
+from itertools import chain
 
 
 class Puzzle(object):
@@ -12,10 +13,31 @@ class Puzzle(object):
     def solve(self):
         #TODO
         # implement your search algorithm here
-        
+        if not self.is_solvable():
+            return ["UNSOLVABLE"]
+
         return ["LEFT", "RIGHT"] # sample output 
 
     # you may add more functions if you think is useful
+    def is_solvable(self):
+        flat_list = list(chain.from_iterable(init_state))
+        num_inversions = 0
+
+        for i in range(max_num):
+            current = flat_list[i]
+            for j in range(i + 1, max_num + 1):
+                next = flat_list[j]
+                if current > next and next != 0:
+                    num_inversions += 1
+
+        if n % 2 != 0 and num_inversions % 2 == 0:
+            return True
+        elif n % 2 == 0:
+            row_with_blank = n  - flat_list.index(0) // n
+            return (row_with_blank % 2 == 0) == (num_inversions % 2 !=
+            0)
+        else:
+            return False
 
 if __name__ == "__main__":
     # do NOT modify below
