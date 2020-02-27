@@ -1,147 +1,158 @@
 import os
 import sys
 from itertools import chain
-
-import os
-import sys
 from Queue import Queue
-from Queue import LifoQueue
 from copy import deepcopy
 
 
 class Node:
-    def __init__(self, puzzle, parent=None, move=""):
-        self.state = puzzle
+    def __init__(self, state, parent = None, move = None):
+        self.state = state
         self.parent = parent
-        self.depth = 0
+
         if parent is None:
             self.depth = 0
-            self.moves = move
+            self.moves = list()
         else:
-            self.depth = parent.depth+1
-            self.moves = parent.moves + move
+            self.depth = parent.depth + 1
+            self.moves = list(parent.moves)
+            self.moves.append(move)
 
     def succ(self):
         succs = Queue()
+
         for m in self.state.actions:
-            p = deepcopy(self.state)
-            p.doMove(m)
-            if p.zero is not self.state.zero:
-                succs.put(Node(p, self, m))
+            transition = self.state.do_move(m)
+
+            if transition.empty_pos != self.state.empty_pos:
+                succs.put(Node(transition, self, m))
+
         return succs
 
-    def goalState(self):
-        return self.state.isGoalState()
-
-class TilePuzzle:
-    def __init__(self, state, goalState, zero, size):
-        self.state = state
-        self.goalState = goalState
-        self.actions = list(("U","D","L","R"))
-        self.zero = zero
-        self.size = size
-
-
-    def doMove(self,move):
-        if move=="U":
-            self.up()
-        if move=="D":
-            self.down()
-        if move=="L":
-            self.left()
-        if move=="R":
-            self.right()
-
-    def swap(self, (x1, y1), (x2, y2)):
-        temp=self.state[x1][y1]
-        self.state[x1][y1]=self.state[x2][y2]
-        self.state[x2][y2]=temp
-
-    def down(self):
-        if (self.zero[0]!=0):
-            self.swap((self.zero[0]-1,self.zero[1]),self.zero)
-            self.zero=(self.zero[0]-1,self.zero[1])
-
-    def up(self):
-        if (self.zero[0]!=self.size-1):
-            self.swap((self.zero[0]+1,self.zero[1]),self.zero)
-            self.zero=(self.zero[0]+1,self.zero[1])
-
-    def right(self):
-        if (self.zero[1]!=0):
-            self.swap((self.zero[0],self.zero[1]-1),self.zero)
-            self.zero=(self.zero[0],self.zero[1]-1)
-
-
-    def left(self):
-        if (self.zero[1]!=self.size-1):
-            self.swap((self.zero[0],self.zero[1]+1),self.zero)
-            self.zero=(self.zero[0],self.zero[1]+1)
-
-    def isGoalState(self):
-        return self.state == self.goalState
-
+    def is_goal_state(self):
+        return self.state.check_goal_state()
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        # you may add more attributes if you think is useful
         self.init_state = init_state
+        self.state = init_state
         self.goal_state = goal_state
+        self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
 
-        for i in range(len(self.init_state)):
-            for j in range(len(self.init_state[i])):
-                if self.init_state[i][j] == 0:
-                    print(i,j)
-                    self.zero = (i,j)
+        for x in range(n):
+            for y in range(n):
+                if self.init_state[x][y] == 0:
+                    self.empty_pos = (x, y)
 
-        self.size = len(self.init_state)
-        self.startNode = Node(TilePuzzle(self.init_state, self.goal_state, self.zero, self.size))
+    def do_move(self, move):
+        if move == "UP":
+            return self.up()
+        if move == "DOWN":
+            return self.down()
+        if move == "LEFT":
+            return self.left()
+        if move == "RIGHT":
+            return self.right()
+
+    def swap(self, (x1, y1), (x2, y2)):
+        temp = self.state[x1][y1]
+        self.state[x1][y1] = self.state[x2][y2]
+        self.state[x2][y2] = temp
+
+    def down(self):
+        if (self.empty_pos[0] != 0):
+            t = deepcopy(self)
+            pos = (t.empty_pos[0] - 1, t.empty_pos[1])
+            t.swap(pos, t.empty_pos)
+            t.empty_pos = pos
+
+            return t
+        else:
+            return self
+
+    def up(self):
+        if (self.empty_pos[0] != n - 1):
+            t = deepcopy(self)
+            pos = (t.empty_pos[0] + 1 , t.empty_pos[1])
+            t.swap(pos, t.empty_pos)
+            t.empty_pos = pos
+
+            return t
+        else:
+            return self
+
+    def right(self):
+        if (self.empty_pos[1] != 0):
+            t = deepcopy(self)
+            pos = (t.empty_pos[0] , t.empty_pos[1] - 1)
+            t.swap(pos, t.empty_pos)
+            t.empty_pos = pos
+
+            return t
+        else:
+            return self
+
+    def left(self):
+        if (self.empty_pos[1] != n - 1):
+            t = deepcopy(self)
+            pos = (t.empty_pos[0] , t.empty_pos[1] + 1)
+            t.swap(pos, t.empty_pos)
+            t.empty_pos = pos
+
+            return t
+        else:
+            return self
+
+    def check_goal_state(self):
+        return self.state == self.goal_state
 
     def is_solvable(self):
-        flat_list = list(chain.from_iterable(init_state))
+        flat_list = list(chain.from_iterable(self.init_state))
         num_inversions = 0
 
         for i in range(max_num):
             current = flat_list[i]
+
             for j in range(i + 1, max_num + 1):
                 next = flat_list[j]
+
                 if current > next and next != 0:
                     num_inversions += 1
 
         if n % 2 != 0 and num_inversions % 2 == 0:
             return True
         elif n % 2 == 0:
-            row_with_blank = n  - flat_list.index(0) // n
-            return (row_with_blank % 2 == 0) == (num_inversions % 2 !=
-            0)
+            row_with_blank = n - flat_list.index(0) // n
+
+            return (row_with_blank % 2 == 0) == (num_inversions % 2 != 0)
         else:
             return False
 
-    def depthLimited(self, depth):
-        leaves = LifoQueue()
-        leaves.put(self.startNode)
-        while True:
-            if leaves.empty():
-                return None
-            actual = leaves.get()
-            if actual.goalState():
-                return actual
-            elif actual.depth is not depth:
-                succ = actual.succ()
-                while not succ.empty():
-                    leaves.put(succ.get())
+    def depth_limited(self, node, depth):
+        if node.is_goal_state():
+            return node
+        if node.depth >= depth:
+            return None
+
+        succs = node.succ()
+
+        while not succs.empty():
+            result = self.depth_limited(succs.get(), depth)
+            if result is not None:
+                return result
 
     def solve(self):
-        if (not self.is_solvable()):
-            return ""
+        if not self.is_solvable():
+            return ["UNSOLVABLE"]
+
         depth = 0
-        result = None
-        while result == None:
-            result = self.depthLimited(depth)
-            depth +=1
-        return result.moves
+        goal_node = None
 
+        while goal_node == None:
+            goal_node = self.depth_limited(Node(self), depth)
+            depth += 1
 
+        return goal_node.moves
 
 if __name__ == "__main__":
     # do NOT modify below
