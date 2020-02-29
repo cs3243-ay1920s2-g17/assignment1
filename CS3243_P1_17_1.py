@@ -4,7 +4,7 @@ from itertools import chain
 from collections import deque
 
 class Node:
-    def __init__(self, state, parent = None, move = None):
+    def __init__(self, state, parent = None, move = None, empty_pos = None):
         self.state = state
         self.parent = parent
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -13,13 +13,15 @@ class Node:
             self.depth = 0
             self.moves = list()
             self.visited = list()
+            self.empty_pos = self.find_empty_pos(self.state)
         else:
             self.depth = parent.depth + 1
             self.moves = parent.moves[:]
             self.moves.append(move)
             self.visited = parent.visited[:]
+            self.empty_pos = empty_pos
 
-    def empty_pos(self, state):
+    def find_empty_pos(self, state):
         for x in range(n):
             for y in range(n):
                 if state[x][y] == 0:
@@ -30,10 +32,10 @@ class Node:
         self.visited.append(self.state)
 
         for m in self.actions:
-            transition = self.do_move(m)
+            transition, t_empty = self.do_move(m)
 
-            if self.empty_pos(transition) != self.empty_pos(self.state) and transition not in self.visited:
-                succs.append(Node(transition, self, m))
+            if t_empty != self.empty_pos and transition not in self.visited:
+                succs.append(Node(transition, self, m, t_empty))
 
         return succs
 
@@ -53,52 +55,52 @@ class Node:
         state[x2][y2] = temp
 
     def down(self):
-        empty = self.empty_pos(self.state)
+        empty = self.empty_pos
 
         if (empty[0] != 0):
             t = [row[:] for row in self.state]
             pos = (empty[0] - 1, empty[1])
             self.swap(t, pos, empty)
 
-            return t
+            return t, pos
         else:
-            return self.state
+            return self.state, empty
 
     def up(self):
-        empty = self.empty_pos(self.state)
+        empty = self.empty_pos
 
         if (empty[0] != n - 1):
             t = [row[:] for row in self.state]
             pos = (empty[0] + 1 , empty[1])
             self.swap(t, pos, empty)
 
-            return t
+            return t, pos
         else:
-            return self.state
+            return self.state, empty
 
     def right(self):
-        empty = self.empty_pos(self.state)
+        empty = self.empty_pos
 
         if (empty[1] != 0):
             t = [row[:] for row in self.state]
             pos = (empty[0] , empty[1] - 1)
             self.swap(t, pos, empty)
 
-            return t
+            return t, pos
         else:
-            return self.state
+            return self.state, empty
 
     def left(self):
-        empty = self.empty_pos(self.state)
+        empty = self.empty_pos
 
         if (empty[1] != n - 1):
             t = [row[:] for row in self.state]
             pos = (empty[0] , empty[1] + 1)
             self.swap(t, pos, empty)
 
-            return t
+            return t, pos
         else:
-            return self.state
+            return self.state, empty
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
