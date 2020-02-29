@@ -1,48 +1,41 @@
 import os
 import sys
 from itertools import chain
-from Queue import Queue
-from copy import deepcopy
-
+from collections import deque
 
 class Node:
     def __init__(self, state, parent = None, move = None):
         self.state = state
         self.parent = parent
+        self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
 
         if parent is None:
             self.depth = 0
             self.moves = list()
+            self.visited = list()
         else:
             self.depth = parent.depth + 1
-            self.moves = list(parent.moves)
+            self.moves = parent.moves[:]
             self.moves.append(move)
+            self.visited = parent.visited[:]
 
-    def succ(self):
-        succs = Queue()
-
-        for m in self.state.actions:
-            transition = self.state.do_move(m)
-
-            if transition.empty_pos != self.state.empty_pos:
-                succs.put(Node(transition, self, m))
-
-        return succs
-
-    def is_goal_state(self):
-        return self.state.check_goal_state()
-
-class Puzzle(object):
-    def __init__(self, init_state, goal_state):
-        self.init_state = init_state
-        self.state = init_state
-        self.goal_state = goal_state
-        self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
-
+    def empty_pos(self, state):
         for x in range(n):
             for y in range(n):
-                if self.init_state[x][y] == 0:
-                    self.empty_pos = (x, y)
+                if state[x][y] == 0:
+                    return (x, y)
+
+    def succ(self):
+        succs = deque()
+        self.visited.append(self.state)
+
+        for m in self.actions:
+            transition = self.do_move(m)
+
+            if self.empty_pos(transition) != self.empty_pos(self.state) and transition not in self.visited:
+                succs.append(Node(transition, self, m))
+
+        return succs
 
     def do_move(self, move):
         if move == "UP":
@@ -54,57 +47,70 @@ class Puzzle(object):
         if move == "RIGHT":
             return self.right()
 
-    def swap(self, (x1, y1), (x2, y2)):
-        temp = self.state[x1][y1]
-        self.state[x1][y1] = self.state[x2][y2]
-        self.state[x2][y2] = temp
+    def swap(self, state, (x1, y1), (x2, y2)):
+        temp = state[x1][y1]
+        state[x1][y1] = state[x2][y2]
+        state[x2][y2] = temp
 
     def down(self):
-        if (self.empty_pos[0] != 0):
-            t = deepcopy(self)
-            pos = (t.empty_pos[0] - 1, t.empty_pos[1])
-            t.swap(pos, t.empty_pos)
-            t.empty_pos = pos
+        empty = self.empty_pos(self.state)
+
+        if (empty[0] != 0):
+            t = [row[:] for row in self.state]
+            pos = (empty[0] - 1, empty[1])
+            self.swap(t, pos, empty)
 
             return t
         else:
-            return self
+            return self.state
 
     def up(self):
-        if (self.empty_pos[0] != n - 1):
-            t = deepcopy(self)
-            pos = (t.empty_pos[0] + 1 , t.empty_pos[1])
-            t.swap(pos, t.empty_pos)
-            t.empty_pos = pos
+        empty = self.empty_pos(self.state)
+
+        if (empty[0] != n - 1):
+            t = [row[:] for row in self.state]
+            pos = (empty[0] + 1 , empty[1])
+            self.swap(t, pos, empty)
 
             return t
         else:
-            return self
+            return self.state
 
     def right(self):
-        if (self.empty_pos[1] != 0):
-            t = deepcopy(self)
-            pos = (t.empty_pos[0] , t.empty_pos[1] - 1)
-            t.swap(pos, t.empty_pos)
-            t.empty_pos = pos
+        empty = self.empty_pos(self.state)
+
+        if (empty[1] != 0):
+            t = [row[:] for row in self.state]
+            pos = (empty[0] , empty[1] - 1)
+            self.swap(t, pos, empty)
 
             return t
         else:
-            return self
+            return self.state
 
     def left(self):
-        if (self.empty_pos[1] != n - 1):
-            t = deepcopy(self)
-            pos = (t.empty_pos[0] , t.empty_pos[1] + 1)
-            t.swap(pos, t.empty_pos)
-            t.empty_pos = pos
+        empty = self.empty_pos(self.state)
+
+        if (empty[1] != n - 1):
+            t = [row[:] for row in self.state]
+            pos = (empty[0] , empty[1] + 1)
+            self.swap(t, pos, empty)
 
             return t
         else:
-            return self
+            return self.state
 
-    def check_goal_state(self):
-        return self.state == self.goal_state
+class Puzzle(object):
+    def __init__(self, init_state, goal_state):
+        self.init_state = init_state
+        self.state = init_state
+        self.goal_state = goal_state
+        self.total_visited = 0
+        self.max_frontier = 0
+        self.depth = 0
+ 
+    def is_goal_state(self, node):
+        return node.state == self.goal_state
 
     def is_solvable(self):
         flat_list = list(chain.from_iterable(self.init_state))
@@ -128,30 +134,45 @@ class Puzzle(object):
         else:
             return False
 
-    def depth_limited(self, node, depth):
-        if node.is_goal_state():
+    def depth_limited(self, node, depth, frontier):
+        if self.is_goal_state(node):
             return node
         if node.depth >= depth:
             return None
 
         succs = node.succ()
+        self.total_visited += 1
+        frontier += len(succs)
 
-        while not succs.empty():
-            result = self.depth_limited(succs.get(), depth)
+        if frontier > self.max_frontier:
+            self.max_frontier = frontier
+
+        while succs:
+            frontier -= 1
+            result = self.depth_limited(succs.popleft(), depth, frontier)
+
             if result is not None:
                 return result
+        
+        return None
 
     def solve(self):
         if not self.is_solvable():
             return ["UNSOLVABLE"]
 
-        depth = 0
         goal_node = None
 
-        while goal_node == None:
-            goal_node = self.depth_limited(Node(self), depth)
-            depth += 1
+        while goal_node is None:
+            goal_node = self.depth_limited(Node(self.init_state), self.depth, 0)
 
+            if goal_node is not None:
+                break
+
+            self.depth += 1
+        
+        print "Total number of nodes explored: " + str(self.total_visited)
+        print "Maximum number of nodes in frontier: " + str(self.max_frontier)
+        print "Solution depth: " + str(self.depth)
         return goal_node.moves
 
 if __name__ == "__main__":
