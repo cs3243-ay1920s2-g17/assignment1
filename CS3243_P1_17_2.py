@@ -12,13 +12,13 @@ class Node:
         if parent is None:
             self.depth = 0
             self.moves = list()
-            self.visited = list()
+            self.visited = set()
             self.empty_pos = self.find_empty_pos(self.state)
         else:
             self.depth = parent.depth + 1
             self.moves = parent.moves[:]
             self.moves.append(move)
-            self.visited = parent.visited[:]
+            self.visited = parent.visited.copy()
             self.empty_pos = empty_pos
 
     def find_empty_pos(self, state):
@@ -29,12 +29,12 @@ class Node:
 
     def succ(self):
         succs = []
-        self.visited.append(self.state)
+        self.visited.add(str(self.state))
 
         for m in self.actions:
             transition, t_empty = self.do_move(m)
 
-            if t_empty != self.empty_pos and transition not in self.visited:
+            if t_empty != self.empty_pos and str(transition) not in self.visited:
                 heapq.heappush(succs, (self.est_cost(transition), Node(transition, self, m, t_empty)))
 
         return succs
@@ -126,7 +126,7 @@ class Puzzle(object):
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
- 
+
     def is_goal_state(self, node):
         return node.state == self.goal_state
 
@@ -159,8 +159,8 @@ class Puzzle(object):
         while True:
             if self.is_goal_state(current):
                 return current
-            
-            succs = list(heapq.merge(succs, current.succ()))
+
+            succs = list(heapq.merge(succs, current.succ()))    # adding n items to heap -> O(nlogn)
             self.total_visited += 1
             frontier += len(succs)
 
@@ -175,7 +175,7 @@ class Puzzle(object):
             return ["UNSOLVABLE"]
 
         goal_node = self.a_star(Node(self.init_state), 0)
-        
+
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(goal_node.depth)
@@ -225,6 +225,9 @@ if __name__ == "__main__":
     goal_state[n - 1][n - 1] = 0
 
     puzzle = Puzzle(init_state, goal_state)
+    node = Node(init_state)
+    hamming_dist = node.misplaced_tiles(init_state)
+    print hamming_dist
     ans = puzzle.solve()
 
     with open(sys.argv[2], 'a') as f:
