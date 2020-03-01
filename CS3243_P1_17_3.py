@@ -50,9 +50,9 @@ class Node:
                 current_tile = state[x][y]
 
                 if current_tile != 0:
-                    x_diff = abs(x - current_tile // n)
                     current_tile -= 1
-                    y_diff = abs(y - value % n)
+                    x_diff = abs(x - current_tile // n)
+                    y_diff = abs(y - current_tile % n)
                     dist += x_diff + y_diff
 
         return dist
