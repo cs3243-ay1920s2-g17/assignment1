@@ -4,40 +4,20 @@ from itertools import chain
 import heapq
 
 class Node:
-    def __init__(self, state, parent = None, move = None, empty_pos = None):
+    def __init__(self, state, empty_pos = None, depth = 0):
         self.state = state
-        self.parent = parent
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
-
-        if parent is None:
-            self.depth = 0
-            self.moves = list()
-            self.visited = set()
+        if (empty_pos == None):
             self.empty_pos = self.find_empty_pos(self.state)
         else:
-            self.depth = parent.depth + 1
-            self.moves = parent.moves[:]
-            self.moves.append(move)
-            self.visited = parent.visited.copy()
             self.empty_pos = empty_pos
+        self.depth = depth
 
     def find_empty_pos(self, state):
         for x in range(n):
             for y in range(n):
                 if state[x][y] == 0:
                     return (x, y)
-
-    def succ(self):
-        succs = []
-        self.visited.add(str(self.state))
-
-        for m in self.actions:
-            transition, t_empty = self.do_move(m)
-
-            if t_empty != self.empty_pos and str(transition) not in self.visited:
-                heapq.heappush(succs, (self.est_cost(transition), Node(transition, self, m, t_empty)))
-
-        return succs
 
     def est_cost(self, state):
         return self.manhattan_dist(state) + self.depth + 1
@@ -128,6 +108,12 @@ class Puzzle(object):
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
+        self.visited = set()
+        self.frontier_set = set()
+        self.frontier_node = []
+        self.move_dict = {}
+        self.depth = 0
+        self.frontier = 0
 
     def is_goal_state(self, node):
         return node.state == self.goal_state
@@ -154,34 +140,54 @@ class Puzzle(object):
         else:
             return False
 
-    def a_star(self, node, frontier):
-        succs = []
+    def a_star(self, node):
         current = node
 
         while True:
             if self.is_goal_state(current):
                 return current
 
-            succs = list(heapq.merge(succs, current.succ()))
-            self.total_visited += 1
-            frontier += len(succs)
+            self.succ(current)  # add resulting nodes to self.frontier_node
+            if self.frontier > self.max_frontier:
+                self.max_frontier = self.frontier
 
-            if frontier > self.max_frontier:
-                self.max_frontier = frontier
+            current = heapq.heappop(self.frontier_node)[1]
+            self.frontier_set.remove(str(current.state))
+            self.frontier -= 1
 
-            current = heapq.heappop(succs)[1]
-            frontier -= 1
+
+    def succ(self, node):
+        self.visited.add(str(node.state))
+        self.total_visited += 1
+        for m in node.actions:
+            transition, t_empty = node.do_move(m)
+            depth = node.depth + 1
+
+            if str(transition) not in self.frontier_set and str(transition) not in self.visited:
+                self.frontier_set.add(str(transition))
+                self.move_dict[str(transition)] = (str(node.state), m)
+                heapq.heappush(self.frontier_node, (node.est_cost(transition), Node(transition, t_empty, depth)))
+                self.frontier += 1
+
+
 
     def solve(self):
         if not self.is_solvable():
             return ["UNSOLVABLE"]
 
-        goal_node = self.a_star(Node(self.init_state), 0)
+        goal_node = self.a_star(Node(self.init_state))
 
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(goal_node.depth)
-        return goal_node.moves
+
+        moves = []
+        str_init = str(self.init_state)
+        curr = str(goal_node.state)
+        while (curr != str_init):
+            curr, move = self.move_dict[curr]
+            moves.append(move)
+        return moves[::-1]
 
 if __name__ == "__main__":
     # do NOT modify below
@@ -227,9 +233,6 @@ if __name__ == "__main__":
     goal_state[n - 1][n - 1] = 0
 
     puzzle = Puzzle(init_state, goal_state)
-    node = Node(init_state)
-    manhatten = node.manhattan_dist(init_state)
-    print manhatten
     ans = puzzle.solve()
 
     with open(sys.argv[2], 'a') as f:
