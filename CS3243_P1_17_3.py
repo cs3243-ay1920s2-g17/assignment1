@@ -3,15 +3,18 @@ import sys
 from itertools import chain
 import heapq
 
+# A* Search using Manhattan Distance heuristics
+
 class Node:
     def __init__(self, state, empty_pos = None, depth = 0):
         self.state = state
+        self.depth = depth
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
-        if (empty_pos == None):
+
+        if empty_pos is None:
             self.empty_pos = self.find_empty_pos(self.state)
         else:
             self.empty_pos = empty_pos
-        self.depth = depth
 
     def find_empty_pos(self, state):
         for x in range(n):
@@ -105,16 +108,15 @@ class Puzzle(object):
         self.init_state = init_state
         self.state = init_state
         self.goal_state = goal_state
+        self.visited = set()
+        self.frontier_node = []
+        self.frontier_cost_set = set()
+        self.move_dict = {}
+        self.total_nodes = 1
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
-        self.visited = set()
-        self.frontier_set = set()
-        self.frontier_node = []
-        self.move_dict = {}
-        self.depth = 0
-        self.frontier = 0
-
+ 
     def is_goal_state(self, node):
         return node.state == self.goal_state
 
@@ -140,54 +142,61 @@ class Puzzle(object):
         else:
             return False
 
-    def a_star(self, node):
-        current = node
-
-        while True:
-            if self.is_goal_state(current):
-                return current
-
-            self.succ(current)  # add resulting nodes to self.frontier_node
-            if self.frontier > self.max_frontier:
-                self.max_frontier = self.frontier
-
-            current = heapq.heappop(self.frontier_node)[1]
-            self.frontier_set.remove(str(current.state))
-            self.frontier -= 1
-
-
-    def succ(self, node):
-        self.visited.add(str(node.state))
+    def succ(self, node, frontier):
+        node_str = str(node.state)
+        self.visited.add(node_str)
         self.total_visited += 1
+        frontier -= 1
+
         for m in node.actions:
             transition, t_empty = node.do_move(m)
-            depth = node.depth + 1
+            transition_depth = node.depth + 1
+            transition_str = str(transition)
+            transition_cost = node.est_cost(transition)
+            transition_cost_str = str(transition_cost) + str(transition)
 
-            if str(transition) not in self.frontier_set and str(transition) not in self.visited:
-                self.frontier_set.add(str(transition))
-                self.move_dict[str(transition)] = (str(node.state), m)
-                heapq.heappush(self.frontier_node, (node.est_cost(transition), Node(transition, t_empty, depth)))
-                self.frontier += 1
+            if t_empty != node.empty_pos:
+                self.total_nodes += 1
 
+            if transition_cost_str not in self.frontier_cost_set and transition_str not in self.visited:
+                self.frontier_cost_set.add(transition_cost_str)
+                self.move_dict[transition_str] = (node_str, m)
+                heapq.heappush(self.frontier_node, (transition_cost, Node(transition, t_empty, transition_depth)))
+                frontier += 1
 
+        return frontier
+
+    def a_star(self, node, frontier):
+        while True:
+            if self.is_goal_state(node):
+                return node
+
+            frontier = self.succ(node, frontier)
+            self.max_frontier = max(self.max_frontier, frontier)
+            cost, node = heapq.heappop(self.frontier_node)
+            self.frontier_cost_set.remove(str(cost) + str(node.state))
 
     def solve(self):
         if not self.is_solvable():
             return ["UNSOLVABLE"]
 
-        goal_node = self.a_star(Node(self.init_state))
-
+        goal_node = self.a_star(Node(self.init_state), 1)
+       
+        print "Total number of nodes generated: " + str(self.total_nodes)
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(goal_node.depth)
+        
+        solution = []
+        init_str = str(self.init_state)
+        current_str = str(goal_node.state)
 
-        moves = []
-        str_init = str(self.init_state)
-        curr = str(goal_node.state)
-        while (curr != str_init):
-            curr, move = self.move_dict[curr]
-            moves.append(move)
-        return moves[::-1]
+        # recursion?
+        while current_str != init_str:
+            current_str, move = self.move_dict[current_str]
+            solution.append(move)
+
+        return solution[::-1]
 
 if __name__ == "__main__":
     # do NOT modify below
