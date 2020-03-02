@@ -3,6 +3,8 @@ import sys
 from itertools import chain
 from collections import deque
 
+# Iterative Deepening Search (IDS)
+
 class Node:
     def __init__(self, state, parent = None, move = None, empty_pos = None):
         self.state = state
@@ -11,8 +13,8 @@ class Node:
 
         if parent is None:
             self.depth = 0
-            self.moves = list()
-            self.visited = list()
+            self.moves = []
+            self.visited = []
             self.empty_pos = self.find_empty_pos(self.state)
         else:
             self.depth = parent.depth + 1
@@ -26,18 +28,6 @@ class Node:
             for y in range(n):
                 if state[x][y] == 0:
                     return (x, y)
-
-    def succ(self):
-        succs = deque()
-        self.visited.append(self.state)
-
-        for m in self.actions:
-            transition, t_empty = self.do_move(m)
-
-            if t_empty != self.empty_pos and transition not in self.visited:
-                succs.append(Node(transition, self, m, t_empty))
-
-        return succs
 
     def do_move(self, move):
         if move == "UP":
@@ -107,6 +97,7 @@ class Puzzle(object):
         self.init_state = init_state
         self.state = init_state
         self.goal_state = goal_state
+        self.total_nodes = 1
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
@@ -136,24 +127,38 @@ class Puzzle(object):
         else:
             return False
 
+    def succ(self, node, frontier):
+        succs = deque()
+        node.visited.append(node.state)
+        self.total_visited += 1
+        frontier -= 1
+
+        for m in node.actions:
+            transition, t_empty = node.do_move(m)
+
+            if t_empty != node.empty_pos:
+                self.total_nodes += 1
+
+            if transition not in node.visited:
+                succs.append(Node(transition, node, m, t_empty))
+                frontier += 1
+
+        return succs, frontier
+
+
     def depth_limited(self, node, depth, frontier):
         if self.is_goal_state(node):
             return node
         if node.depth >= depth:
             return None
 
-        succs = node.succ()
-        self.total_visited += 1
-        frontier += len(succs)
-
-        if frontier > self.max_frontier:
-            self.max_frontier = frontier
+        succs, frontier = self.succ(node, frontier)
+        self.max_frontier = max(self.max_frontier, frontier)
 
         while succs:
-            frontier -= 1
-            result = self.depth_limited(succs.popleft(), depth, frontier)
+           result = self.depth_limited(succs.popleft(), depth, frontier)
 
-            if result is not None:
+           if result is not None:
                 return result
         
         return None
@@ -165,13 +170,14 @@ class Puzzle(object):
         goal_node = None
 
         while goal_node is None:
-            goal_node = self.depth_limited(Node(self.init_state), self.depth, 0)
+            goal_node = self.depth_limited(Node(self.init_state), self.depth, 1)
 
             if goal_node is not None:
                 break
 
             self.depth += 1
         
+        print "Total number of nodes generated: " + str(self.total_nodes) 
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(self.depth)
