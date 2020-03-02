@@ -149,19 +149,19 @@ class Puzzle(object):
 
         for m in node.actions:
             transition, t_empty = node.do_move(m)
-            transition_depth = node.depth + 1
-            transition_str = str(transition)
-            transition_cost = node.est_cost(transition)
-            transition_cost_str = str(transition_cost) + str(transition)
 
             if t_empty != node.empty_pos:
                 self.total_nodes += 1
+                transition_depth = node.depth + 1
+                transition_str = str(transition)
+                transition_cost = node.est_cost(transition)
+                transition_cost_str = str(transition_cost) + str(transition)
 
-            if transition_cost_str not in self.frontier_cost_set and transition_str not in self.visited:
-                self.frontier_cost_set.add(transition_cost_str)
-                self.move_dict[transition_str] = (node_str, m)
-                heapq.heappush(self.frontier_node, (transition_cost, Node(transition, t_empty, transition_depth)))
-                frontier += 1
+                if transition_cost_str not in self.frontier_cost_set and transition_str not in self.visited:
+                    self.frontier_cost_set.add(transition_cost_str)
+                    self.move_dict[transition_str] = (node_str, m)
+                    heapq.heappush(self.frontier_node, (transition_cost, Node(transition, t_empty, transition_depth)))
+                    frontier += 1
 
         return frontier
 
