@@ -1,6 +1,7 @@
 import os
 import sys
 from itertools import chain
+from collections import deque
 import heapq
 
 # A* Search using Manhattan Distance + Linear Conflict heuristics
@@ -218,16 +219,15 @@ class Puzzle(object):
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(goal_node.depth)
         
-        solution = []
+        solution = deque()
         init_str = str(self.init_state)
         current_str = str(goal_node.state)
 
-        # recursion?
         while current_str != init_str:
             current_str, move = self.move_dict[current_str]
-            solution.append(move)
+            solution.appendleft(move)
 
-        return solution[::-1]
+        return solution
 
 if __name__ == "__main__":
     # do NOT modify below
