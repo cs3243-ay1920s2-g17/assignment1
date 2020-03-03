@@ -6,22 +6,22 @@ from collections import deque
 # Iterative Deepening Search (IDS)
 
 class Node:
-    def __init__(self, state, parent = None, move = None, empty_pos = None):
+    def __init__(self, state, empty_pos = None, depth = 0):
         self.state = state
-        self.parent = parent
+        self.depth = depth
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
 
-        if parent is None:
-            self.depth = 0
-            self.moves = []
-            self.visited = []
+        if empty_pos is None:
             self.empty_pos = self.find_empty_pos(self.state)
         else:
-            self.depth = parent.depth + 1
-            self.moves = parent.moves[:]
-            self.moves.append(move)
-            self.visited = parent.visited[:]
             self.empty_pos = empty_pos
+
+    def find_empty_pos(self, state):
+        for x in range(n):
+            for y in range(n):
+                if state[x][y] == 0:
+                    return (x, y)
+
 
     def find_empty_pos(self, state):
         for x in range(n):
@@ -101,7 +101,10 @@ class Puzzle(object):
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
- 
+        self.visited = {}
+        self.frontier_node = []
+        self.move_dict = {}
+
     def is_goal_state(self, node):
         return node.state == self.goal_state
 
@@ -129,21 +132,31 @@ class Puzzle(object):
 
     def succ(self, node, frontier):
         succs = deque()
-        node.visited.append(node.state)
+        node_str = str(node.state)
+
+
+
         self.total_visited += 1
         frontier -= 1
 
         for m in node.actions:
             transition, t_empty = node.do_move(m)
+            transition_str = str(transition)
+            transition_depth = node.depth + 1
 
-            if t_empty != node.empty_pos:
+            if transition_str not in self.visited or transition_depth < self.visited[transition_str]:
+
+                self.visited[transition_str] = transition_depth
                 self.total_nodes += 1
-
-            if transition not in node.visited:
-                succs.append(Node(transition, node, m, t_empty))
+                transition_depth = node.depth + 1
+                transition_str = str(transition)
+                self.move_dict[transition_str] = (node_str, m)
+                succs.append(Node(transition, t_empty, transition_depth))
                 frontier += 1
 
-        return succs, frontier
+
+        return succs , frontier
+
 
 
     def depth_limited(self, node, depth, frontier):
@@ -152,6 +165,7 @@ class Puzzle(object):
         if node.depth >= depth:
             return None
 
+        self.visited[str(node)] = 0
         succs, frontier = self.succ(node, frontier)
         self.max_frontier = max(self.max_frontier, frontier)
 
@@ -160,7 +174,7 @@ class Puzzle(object):
 
            if result is not None:
                 return result
-        
+
         return None
 
     def solve(self):
@@ -175,13 +189,30 @@ class Puzzle(object):
             if goal_node is not None:
                 break
 
+            # reset statistics
+            self.visited = {}
+            self.total_nodes = 1
+            self.move_dict = {}
+
             self.depth += 1
-        
-        print "Total number of nodes generated: " + str(self.total_nodes) 
+
+            # print self.depth
+
+        # print "out"
+        print goal_node.state
+        solution = deque()
+        init_str = str(self.init_state)
+        current_str = str(goal_node.state)
+        while current_str != init_str:
+            current_str, move = self.move_dict[current_str]
+            # print current_str, move
+            solution.appendleft(move)
+
+        print "Total number of nodes generated: " + str(self.total_nodes)
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(self.depth)
-        return goal_node.moves
+        return solution
 
 if __name__ == "__main__":
     # do NOT modify below
