@@ -104,6 +104,10 @@ class Node:
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
+        global n
+        global max_num
+        n = len(init_state[0])
+        max_num = n ** 2 - 1
         self.init_state = init_state
         self.state = init_state
         self.goal_state = goal_state
