@@ -4,7 +4,7 @@ from itertools import chain
 from collections import deque
 import heapq
 
-# A* Search using Manhattan Distance heuristics
+# A* Search using Manhattan Distance + Linear Conflict heuristics
 
 class Node:
     def __init__(self, state, empty_pos = None, depth = 0, node_str = None):
