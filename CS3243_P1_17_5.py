@@ -2,13 +2,13 @@
 Experiment file
 '''
 
-import random 
+import random
 import CS3243_P1_17_1 #uninformed
 import CS3243_P1_17_2 #misplaced tiles
 import CS3243_P1_17_3 #manhattan
 import CS3243_P1_17_4 #linear conflict
-
-''' 
+import timeit
+'''
 #undo multiline comment to utilize run() function. It returns a list of 5 randomly selected initial state with specified depth from goal state
 
 def run(depth, number):
@@ -145,7 +145,7 @@ class Puzzle(object):
                 self.frontier_set.add(neighbour_str)
                 self.frontier.append(neighbour)
 
-    def bfs(self, node): 
+    def bfs(self, node):
         self.frontier.append(node)
         self.frontier_set.add(str(node))
         while True:
@@ -171,7 +171,7 @@ class Puzzle(object):
             node = self.frontier[0]
 '''
 
-# TESTING FUNCTIONS 
+# TESTING FUNCTIONS
 def generate_goal_state(n, max_num):
     goal_state = [[0 for i in range(n)] for j in range(n)]
     for i in range(1, max_num + 1):
@@ -180,6 +180,8 @@ def generate_goal_state(n, max_num):
     return goal_state
 
 def run_method(i, init_state, goal_state):
+    # code you want to evaluate
+    start_time = timeit.default_timer()
     if i == 0:
         print("Using Uninformed Search (Iterative Deepening Search)")
         puzzle = CS3243_P1_17_1.Puzzle(init_state, goal_state)
@@ -192,10 +194,12 @@ def run_method(i, init_state, goal_state):
         print("Using Informed Search (Manhattan Distance)")
         puzzle = CS3243_P1_17_3.Puzzle(init_state, goal_state)
         puzzle.solve()
-    else: 
+    else:
         print ("Using Informed Search (Linear Conflict)")
         puzzle = CS3243_P1_17_4.Puzzle(init_state, goal_state)
         puzzle.solve()
+    elapsed = timeit.default_timer() - start_time
+    print("Search Time: " + str(elapsed))
 
 # PRE-COMPUTED initial states for n = 3, depth 20
 n3d20i1 = [[8, 7, 2], [4, 3, 6], [5, 1, 0]]
@@ -235,7 +239,7 @@ def test_n3():
 
     # for n = 3, depth = 20
     for i in range(len(list_of_init_states_depth20)):
-        init_state = list_of_init_states_depth20[i] 
+        init_state = list_of_init_states_depth20[i]
         print ("+" * 86)
         print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(20)))
         print ("+" * 86)
@@ -243,10 +247,10 @@ def test_n3():
         for j in range(4):
             run_method(j, init_state, goal_state)
             print("")
-    
+
     # for n = 3, depth = 25
     for i in range(len(list_of_init_states_depth25)):
-        init_state = list_of_init_states_depth25[i] 
+        init_state = list_of_init_states_depth25[i]
         print ("+" * 86)
         print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(25)))
         print ("+" * 86)
