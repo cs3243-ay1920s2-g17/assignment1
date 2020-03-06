@@ -214,7 +214,7 @@ if __name__ == "__main__":
         raise IOError("Input file not found!")
 
     lines = f.readlines()
-
+    
     # n = num rows in input file
     n = len(lines)
     # max_num = n to the power of 2 - 1
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Instantiate a 2D list of size n x n
     init_state = [[0 for i in range(n)] for j in range(n)]
     goal_state = [[0 for i in range(n)] for j in range(n)]
-
+    
 
     i,j = 0, 0
     for line in lines:
