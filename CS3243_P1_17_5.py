@@ -308,7 +308,7 @@ def test_n5():
     list_of_init_states_depth15.append(n5d15i4)
     list_of_init_states_depth15.append(n5d15i5)
 
-    counter = 21
+    counter = 16
 
     # for n = 5, depth = 15
     for i in range(len(list_of_init_states_depth15)):
@@ -321,7 +321,7 @@ def test_n5():
             run_method(j, init_state, goal_state)
             print("")
 
-# current runtime: 3min
+# current runtime: MAX 3min
 test_n3()
 test_n4()
 test_n5()
