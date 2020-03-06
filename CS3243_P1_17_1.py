@@ -6,22 +6,19 @@ from collections import deque
 # Iterative Deepening Search (IDS)
 
 class Node:
-    def __init__(self, state, empty_pos = None, depth = 0):
+    def __init__(self, state, parent = None, move = None, empty_pos = None, depth = 0, node_str = None):
         self.state = state
+        self.parent = parent
+        self.move = move
         self.depth = depth
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
 
-        if empty_pos is None:
-            self.empty_pos = self.find_empty_pos(self.state)
-        else:
+        if empty_pos is not None:
+            self.node_str = node_str
             self.empty_pos = empty_pos
-
-    def find_empty_pos(self, state):
-        for x in range(n):
-            for y in range(n):
-                if state[x][y] == 0:
-                    return (x, y)
-
+        else:
+            self.node_str = str(state)
+            self.empty_pos = self.find_empty_pos(self.state)
 
     def find_empty_pos(self, state):
         for x in range(n):
@@ -39,56 +36,51 @@ class Node:
         if move == "RIGHT":
             return self.right()
 
-    def swap(self, state, (x1, y1), (x2, y2)):
-        temp = state[x1][y1]
-        state[x1][y1] = state[x2][y2]
-        state[x2][y2] = temp
-
     def down(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[0] != 0):
+        if (x != 0):
             t = [row[:] for row in self.state]
-            pos = (empty[0] - 1, empty[1])
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x - 1][y] = t[x - 1][y], t[x][y]
+            return t, (x - 1, y)
         else:
             return self.state, empty
 
     def up(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[0] != n - 1):
+        if (x != n - 1):
             t = [row[:] for row in self.state]
-            pos = (empty[0] + 1 , empty[1])
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x + 1][y] = t[x + 1][y], t[x][y]
+            return t, (x + 1, y)
         else:
             return self.state, empty
 
     def right(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[1] != 0):
+        if (y != 0):
             t = [row[:] for row in self.state]
-            pos = (empty[0] , empty[1] - 1)
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x][y - 1] = t[x][y - 1], t[x][y]
+            return t, (x, y - 1)
         else:
             return self.state, empty
 
     def left(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[1] != n - 1):
+        if (y != n - 1):
             t = [row[:] for row in self.state]
-            pos = (empty[0] , empty[1] + 1)
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x][y + 1] = t[x][y + 1], t[x][y]
+            return t, (x, y + 1)
         else:
             return self.state, empty
 
@@ -101,14 +93,12 @@ class Puzzle(object):
         self.init_state = init_state
         self.state = init_state
         self.goal_state = goal_state
+        self.visited = {}
         self.total_nodes = 1
         self.total_visited = 0
         self.max_frontier = 0
         self.depth = 0
-        self.visited = {}
-        self.frontier_node = []
-        self.move_dict = {}
-
+ 
     def is_goal_state(self, node):
         return node.state == self.goal_state
 
@@ -136,40 +126,31 @@ class Puzzle(object):
 
     def succ(self, node, frontier):
         succs = deque()
-        node_str = str(node.state)
-
-
-
+        node_str = node.node_str
+        self.visited[node_str] = node.depth
         self.total_visited += 1
         frontier -= 1
 
         for m in node.actions:
             transition, t_empty = node.do_move(m)
-            transition_str = str(transition)
-            transition_depth = node.depth + 1
 
-            if transition_str not in self.visited or transition_depth < self.visited[transition_str]:
-
-                self.visited[transition_str] = transition_depth
+            if t_empty != node.empty_pos:
                 self.total_nodes += 1
                 transition_depth = node.depth + 1
                 transition_str = str(transition)
-                self.move_dict[transition_str] = (node_str, m)
-                succs.append(Node(transition, t_empty, transition_depth))
-                frontier += 1
 
+                if transition_str not in self.visited or transition_depth < self.visited[transition_str]:
+                    succs.append(Node(transition, node, m, t_empty, transition_depth, transition_str))
+                    frontier += 1
 
-        return succs , frontier
-
-
+        return succs, frontier
 
     def depth_limited(self, node, depth, frontier):
         if self.is_goal_state(node):
             return node
         if node.depth >= depth:
             return None
-
-        self.visited[str(node)] = 0
+        
         succs, frontier = self.succ(node, frontier)
         self.max_frontier = max(self.max_frontier, frontier)
 
@@ -178,7 +159,7 @@ class Puzzle(object):
 
            if result is not None:
                 return result
-
+        
         return None
 
     def solve(self):
@@ -188,33 +169,27 @@ class Puzzle(object):
         goal_node = None
 
         while goal_node is None:
-            goal_node = self.depth_limited(Node(self.init_state), self.depth, 1)
+            init_node = Node(self.init_state)
+            goal_node = self.depth_limited(init_node, self.depth, 1)
 
             if goal_node is not None:
                 break
-
-            # reset statistics
+            
             self.visited = {}
-            self.total_nodes = 1
-            self.move_dict = {}
-
             self.depth += 1
-
-            # print self.depth
-
-        # print "out"
-        solution = deque()
-        init_str = str(self.init_state)
-        current_str = str(goal_node.state)
-        while current_str != init_str:
-            current_str, move = self.move_dict[current_str]
-            # print current_str, move
-            solution.appendleft(move)
-
-        print "Total number of nodes generated: " + str(self.total_nodes)
+        
+        print "Total number of nodes generated: " + str(self.total_nodes) 
         print "Total number of nodes explored: " + str(self.total_visited)
         print "Maximum number of nodes in frontier: " + str(self.max_frontier)
         print "Solution depth: " + str(self.depth)
+
+        solution = deque()
+        current_node = goal_node
+
+        while current_node.state != self.init_state:
+            solution.appendleft(current_node.move)
+            current_node = current_node.parent
+
         return solution
 
 if __name__ == "__main__":

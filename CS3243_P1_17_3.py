@@ -3,20 +3,22 @@ import sys
 from itertools import chain
 from collections import deque
 import heapq
-    
+
 # A* Search using Manhattan Distance heuristics
 
 class Node:
-    def __init__(self, state, empty_pos = None, depth = 0):
+    def __init__(self, state, empty_pos = None, depth = 0, node_str = None):
         self.state = state
         self.depth = depth
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
 
-        if empty_pos is None:
-            self.empty_pos = self.find_empty_pos(self.state)
-        else:
+        if empty_pos is not None:
+            self.node_str = node_str
             self.empty_pos = empty_pos
-
+        else:
+            self.node_str = str(state)
+            self.empty_pos = self.find_empty_pos(self.state)
+ 
     def find_empty_pos(self, state):
         for x in range(n):
             for y in range(n):
@@ -51,62 +53,57 @@ class Node:
         if move == "RIGHT":
             return self.right()
 
-    def swap(self, state, (x1, y1), (x2, y2)):
-        temp = state[x1][y1]
-        state[x1][y1] = state[x2][y2]
-        state[x2][y2] = temp
-
     def down(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[0] != 0):
+        if (x != 0):
             t = [row[:] for row in self.state]
-            pos = (empty[0] - 1, empty[1])
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x - 1][y] = t[x - 1][y], t[x][y]
+            return t, (x - 1, y)
         else:
             return self.state, empty
 
     def up(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[0] != n - 1):
+        if (x != n - 1):
             t = [row[:] for row in self.state]
-            pos = (empty[0] + 1 , empty[1])
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x + 1][y] = t[x + 1][y], t[x][y]
+            return t, (x + 1, y)
         else:
             return self.state, empty
 
     def right(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[1] != 0):
+        if (y != 0):
             t = [row[:] for row in self.state]
-            pos = (empty[0] , empty[1] - 1)
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x][y - 1] = t[x][y - 1], t[x][y]
+            return t, (x, y - 1)
         else:
             return self.state, empty
 
     def left(self):
         empty = self.empty_pos
+        x = empty[0]
+        y = empty[1]
 
-        if (empty[1] != n - 1):
+        if (y != n - 1):
             t = [row[:] for row in self.state]
-            pos = (empty[0] , empty[1] + 1)
-            self.swap(t, pos, empty)
-
-            return t, pos
+            t[x][y], t[x][y + 1] = t[x][y + 1], t[x][y]
+            return t, (x, y + 1)
         else:
             return self.state, empty
 
 class Puzzle(object):
     def __init__(self, init_state, goal_state):
-        global n
+        global n 
         global max_num
         n = len(init_state[0])
         max_num = n ** 2 - 1
@@ -115,7 +112,7 @@ class Puzzle(object):
         self.goal_state = goal_state
         self.visited = set()
         self.frontier_node = []
-        self.frontier_cost_set = set()
+        self.frontier_dict = {}
         self.move_dict = {}
         self.total_nodes = 1
         self.total_visited = 0
@@ -148,7 +145,7 @@ class Puzzle(object):
             return False
 
     def succ(self, node, frontier):
-        node_str = str(node.state)
+        node_str = node.node_str
         self.visited.add(node_str)
         self.total_visited += 1
         frontier -= 1
@@ -161,12 +158,11 @@ class Puzzle(object):
                 transition_depth = node.depth + 1
                 transition_str = str(transition)
                 transition_cost = node.est_cost(transition)
-                transition_cost_str = str(transition_cost) + str(transition)
 
-                if transition_cost_str not in self.frontier_cost_set and transition_str not in self.visited:
-                    self.frontier_cost_set.add(transition_cost_str)
+                if (transition_str not in self.frontier_dict or transition_cost < self.frontier_dict[transition_str]) and transition_str not in self.visited:
+                    heapq.heappush(self.frontier_node, (transition_cost, Node(transition, t_empty, transition_depth, transition_str)))
+                    self.frontier_dict[transition_str] = transition_cost
                     self.move_dict[transition_str] = (node_str, m)
-                    heapq.heappush(self.frontier_node, (transition_cost, Node(transition, t_empty, transition_depth)))
                     frontier += 1
 
         return frontier
@@ -179,13 +175,16 @@ class Puzzle(object):
             frontier = self.succ(node, frontier)
             self.max_frontier = max(self.max_frontier, frontier)
             cost, node = heapq.heappop(self.frontier_node)
-            self.frontier_cost_set.remove(str(cost) + str(node.state))
+
+            if node.node_str in self.frontier_dict:
+                self.frontier_dict.pop(node.node_str)
 
     def solve(self):
         if not self.is_solvable():
             return ["UNSOLVABLE"]
 
-        goal_node = self.a_star(Node(self.init_state), 1)
+        init_node = Node(self.init_state)
+        goal_node = self.a_star(init_node, 1)
        
         print "Total number of nodes generated: " + str(self.total_nodes)
         print "Total number of nodes explored: " + str(self.total_visited)
@@ -193,8 +192,8 @@ class Puzzle(object):
         print "Solution depth: " + str(goal_node.depth)
         
         solution = deque()
-        init_str = str(self.init_state)
-        current_str = str(goal_node.state)
+        init_str = init_node.node_str
+        current_str = goal_node.node_str
 
         while current_str != init_str:
             current_str, move = self.move_dict[current_str]
