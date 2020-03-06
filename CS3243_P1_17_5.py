@@ -8,7 +8,9 @@ import CS3243_P1_17_2 #misplaced tiles
 import CS3243_P1_17_3 #manhattan
 import CS3243_P1_17_4 #linear conflict
 
-# returns a list of 5 randomly selected initial state with specified depth from goal
+''' 
+#undo multiline comment to utilize run() function. It returns a list of 5 randomly selected initial state with specified depth from goal state
+
 def run(depth, number):
     global n
     n = number
@@ -167,6 +169,7 @@ class Puzzle(object):
 
             self.succ(node)
             node = self.frontier[0]
+'''
 
 # TESTING FUNCTIONS 
 def generate_goal_state(n, max_num):
@@ -178,11 +181,11 @@ def generate_goal_state(n, max_num):
 
 def run_method(i, init_state, goal_state):
     if i == 0:
-        print("Using Uninformed Search (IDS)")
+        print("Using Uninformed Search (Iterative Deepening Search)")
         puzzle = CS3243_P1_17_1.Puzzle(init_state, goal_state)
         puzzle.solve()
     elif i == 1:
-        print("Using Informed Search (Misplaced Tiles)")
+        print("Using Informed Search (Hamming Distance)")
         puzzle = CS3243_P1_17_2.Puzzle(init_state, goal_state)
         puzzle.solve()
     elif i == 2:
@@ -194,64 +197,134 @@ def run_method(i, init_state, goal_state):
         puzzle = CS3243_P1_17_4.Puzzle(init_state, goal_state)
         puzzle.solve()
 
+# PRE-COMPUTED initial states for n = 3, depth 20
+n3d20i1 = [[8, 7, 2], [4, 3, 6], [5, 1, 0]]
+n3d20i2 = [[3, 6, 8], [4, 0, 1], [7, 5, 2]]
+n3d20i3 = [[0, 3, 1], [4, 6, 7], [5, 2, 8]]
+n3d20i4 = [[1, 5, 3], [7, 4, 8], [2, 6, 0]]
+n3d20i5 = [[5, 1, 6], [4, 0, 7], [2, 8, 3]]
+
+# PRE-COMPUTED initial states for n = 3, depth 25
+n3d25i1 = [[7, 4, 8], [0, 2, 5], [3, 1, 6]]
+n3d25i2 = [[1, 7, 5], [0, 2, 6], [8, 3, 4]]
+n3d25i3 = [[6, 4, 8], [0, 1, 7], [3, 5, 2]]
+n3d25i4 = [[6, 5, 2], [0, 8, 4], [1, 3, 7]]
+n3d25i5 = [[8, 5, 1], [0, 6, 7], [3, 2, 4]]
+
+# Test both uniformed and all informed
 def test_n3():
     n = 3
     max_num = n ** 2 - 1
     goal_state = generate_goal_state(n, max_num)
-    list_of_init_states_depth20 = run(20, 3)
-    list_of_init_states_depth25 = run(25, 3)
+
+    list_of_init_states_depth20 = []
+    list_of_init_states_depth20.append(n3d20i1)
+    list_of_init_states_depth20.append(n3d20i2)
+    list_of_init_states_depth20.append(n3d20i3)
+    list_of_init_states_depth20.append(n3d20i4)
+    list_of_init_states_depth20.append(n3d20i5)
+
+    list_of_init_states_depth25 = []
+    list_of_init_states_depth25.append(n3d25i1)
+    list_of_init_states_depth25.append(n3d25i2)
+    list_of_init_states_depth25.append(n3d25i3)
+    list_of_init_states_depth25.append(n3d25i4)
+    list_of_init_states_depth25.append(n3d25i5)
 
     counter = 1
 
     # for n = 3, depth = 20
     for i in range(len(list_of_init_states_depth20)):
         init_state = list_of_init_states_depth20[i] 
-        print("### N = 3; Test case {0}; Initial state: {1}; Expected depth: {2} ###;".format(str(counter), str(init_state.state), str(init_state.depth)))
+        print ("+" * 86)
+        print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(20)))
+        print ("+" * 86)
         counter += 1
         for j in range(4):
-            run_method(j, init_state.state, goal_state)
+            run_method(j, init_state, goal_state)
             print("")
     
     # for n = 3, depth = 25
     for i in range(len(list_of_init_states_depth25)):
         init_state = list_of_init_states_depth25[i] 
-        print("### N = 3; Test case {0}; Initial state: {1}; Expected depth: {2}; ###".format(str(counter), str(init_state.state), str(init_state.depth)))
+        print ("+" * 86)
+        print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(25)))
+        print ("+" * 86)
         counter += 1
         for j in range(4):
-            run_method(j, init_state.state, goal_state)
+            run_method(j, init_state, goal_state)
             print("")
 
+# PRE-COMPUTED initial states for n = 4, depth 20
+n4d20i1 = [[1, 13, 2, 4], [6, 3, 7, 8], [5, 11, 12, 15], [10, 9, 14, 0]]
+n4d20i2 = [[0, 1, 2, 4], [9, 5, 3, 8], [13, 6, 7, 10], [11, 15, 14, 12]]
+n4d20i3 = [[5, 10, 1, 4], [6, 2, 12, 3], [9, 7, 11, 8], [13, 14, 15, 0]]
+n4d20i4 = [[2, 6, 3, 4], [1, 7, 15, 12], [0, 5, 9, 8], [13, 10, 14, 11]]
+n4d20i5 = [[9, 5, 0, 3], [1, 11, 7, 4], [6, 2, 10, 8], [13, 14, 15, 12]]
+
+# Test only for Manhattan & Linear Conflict
 def test_n4():
     n = 4
     max_num = n ** 2 - 1
     goal_state = generate_goal_state(n, max_num)
-    list_of_init_states_depth10 = run(10, 4)
-    list_of_init_states_depth15 = run(15, 4)
+
+    list_of_init_states_depth20 = []
+    list_of_init_states_depth20.append(n4d20i1)
+    list_of_init_states_depth20.append(n4d20i2)
+    list_of_init_states_depth20.append(n4d20i3)
+    list_of_init_states_depth20.append(n4d20i4)
+    list_of_init_states_depth20.append(n4d20i5)
 
     counter = 11
 
-    # for n = 4, depth = 10
-    for i in range(len(list_of_init_states_depth10)):
-        init_state = list_of_init_states_depth10[i] # returns a node
-        print("N = 4; Test case {0}; Initial state: {1}; Expected depth: {2};".format(str(counter), str(init_state.state), str(init_state.depth)))
+    # for n = 4, depth = 20
+    for i in range(len(list_of_init_states_depth20)):
+        init_state = list_of_init_states_depth20[i] # returns a node
+        print ("+" * 116)
+        print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(20)))
+        print ("+" * 116)
         counter += 1
-        for j in range(4):
-            run_method(j, init_state.state, goal_state)
+        for j in range(2, 4):
+            run_method(j, init_state, goal_state)
             print("")
 
-    # for n = 4, depth = 15
+# PRE-COMPUTED initial states for n = 5, depth 15
+n5d15i1 = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [12, 13, 14, 0, 19], [11, 16, 17, 15, 24], [21, 22, 18, 23, 20]]
+n5d15i2 = [[1, 2, 3, 4, 5], [6, 7, 9, 13, 10], [11, 0, 8, 14, 15], [16, 12, 22, 18, 20], [21, 23, 17, 19, 24]]
+n5d15i3 = [[1, 2, 3, 9, 4], [6, 7, 8, 14, 5], [17, 16, 12, 13, 10], [11, 22, 18, 19, 15], [21, 0, 23, 24, 20]]
+n5d15i4 = [[6, 1, 2, 4, 5], [0, 7, 3, 8, 10], [11, 13, 19, 9, 14], [16, 12, 17, 18, 15], [21, 22, 23, 24, 20]]
+n5d15i5 = [[1, 2, 3, 4, 5], [6, 7, 13, 8, 14], [11, 12, 18, 10, 15], [16, 17, 23, 9, 19], [21, 0, 22, 24, 20]]
+
+# Test only for Manhattan & Linear Conflict
+def test_n5():
+    n = 5
+    max_num = n ** 2 - 1
+    goal_state = generate_goal_state(n, max_num)
+
+    list_of_init_states_depth15 = []
+    list_of_init_states_depth15.append(n5d15i1)
+    list_of_init_states_depth15.append(n5d15i2)
+    list_of_init_states_depth15.append(n5d15i3)
+    list_of_init_states_depth15.append(n5d15i4)
+    list_of_init_states_depth15.append(n5d15i5)
+
+    counter = 21
+
+    # for n = 5, depth = 15
     for i in range(len(list_of_init_states_depth15)):
         init_state = list_of_init_states_depth15[i] # returns a node
-        print("### N = 4; Test case {0}; Initial state: {1}; Expected depth: {2} ###;".format(str(counter), str(init_state.state), str(init_state.depth)))
+        print ("+" * 154)
+        print("+ Test case: {0}; Initial state: {1}; Expected depth: {2} +".format(str(counter), str(init_state), str(15)))
+        print ("+" * 154)
         counter += 1
-        for j in range(4):
-            run_method(j, init_state.state, goal_state)
+        for j in range(2, 4):
+            run_method(j, init_state, goal_state)
             print("")
 
-# current runtime: 5min 10sec
+# current runtime: 3min
 test_n3()
-# might pre-populate the list instead of randomly generating...
 test_n4()
+test_n5()
 
 
 
